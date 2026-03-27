@@ -11,30 +11,32 @@
       <h1>Main Form</h1>
       <form id="todo-form" novalidate>
         <label>
-          Task
-          <input id="task" name="task" type="text" required />
+          Description
+          <input id="description" name="description" type="text" required />
+          <small id="description-error" class="field-error" role="alert" aria-live="polite"></small>
         </label>
 
         <label>
           Tags (comma separated)
-          <input id="tags" name="tags" type="text" placeholder="work, urgent" />
+          <input id="tags" name="tags" type="text" placeholder="work, urgent" required />
+          <small id="tags-error" class="field-error" role="alert" aria-live="polite"></small>
         </label>
 
         <label>
-          Time spent (hours)
+          Schedule A
           <input
-            id="timeSpent"
-            name="timeSpent"
-            type="number"
-            min="0"
-            step="0.25"
-            placeholder="e.g. 1.5"
+            id="scheduleA"
+            name="scheduleA"
+            type="datetime-local"
+            required
           />
+          <small id="scheduleA-error" class="field-error" role="alert" aria-live="polite"></small>
         </label>
 
         <label>
-          Future schedule
-          <input id="futureSchedule" name="futureSchedule" type="datetime-local" />
+          Schedule B
+          <input id="scheduleB" name="scheduleB" type="datetime-local" required />
+          <small id="scheduleB-error" class="field-error" role="alert" aria-live="polite"></small>
         </label>
 
         <p id="form-error" role="alert" aria-live="polite"></p>

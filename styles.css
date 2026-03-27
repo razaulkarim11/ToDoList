@@ -35,6 +35,15 @@ button {
   min-height: 1.25rem;
 }
 
+.field-error {
+  color: #d11;
+  min-height: 1rem;
+}
+
+input[aria-invalid='true'] {
+  border: 1px solid #d11;
+}
+
 ul {
   padding-left: 1.2rem;
 }
