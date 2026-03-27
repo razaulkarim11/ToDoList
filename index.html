@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ToDo List</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Main Form</h1>
+      <form id="todo-form" novalidate>
+        <label>
+          Task
+          <input id="task" name="task" type="text" required />
+        </label>
+
+        <label>
+          Tags (comma separated)
+          <input id="tags" name="tags" type="text" placeholder="work, urgent" />
+        </label>
+
+        <label>
+          Time spent (hours)
+          <input
+            id="timeSpent"
+            name="timeSpent"
+            type="number"
+            min="0"
+            step="0.25"
+            placeholder="e.g. 1.5"
+          />
+        </label>
+
+        <label>
+          Future schedule
+          <input id="futureSchedule" name="futureSchedule" type="datetime-local" />
+        </label>
+
+        <p id="form-error" role="alert" aria-live="polite"></p>
+        <button type="submit">Save</button>
+      </form>
+
+      <section>
+        <h2>Submitted items</h2>
+        <ul id="items"></ul>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
