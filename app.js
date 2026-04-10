@@ -1,103 +1,207 @@
-const form = document.getElementById('todo-form');
-const descriptionInput = document.getElementById('description');
-const tagsInput = document.getElementById('tags');
-const scheduleAInput = document.getElementById('scheduleA');
-const scheduleBInput = document.getElementById('scheduleB');
-const errorField = document.getElementById('form-error');
-const itemsList = document.getElementById('items');
-const fieldErrors = {
-  description: document.getElementById('description-error'),
-  tags: document.getElementById('tags-error'),
-  scheduleA: document.getElementById('scheduleA-error'),
-  scheduleB: document.getElementById('scheduleB-error'),
-};
+const STORAGE_KEY = 'timekeeper.entries.v1';
 
-function parseAndValidateTags(rawTags) {
-  const normalizedTags = rawTags
-    .split(',')
-    .map((tag) => tag.trim())
-    .filter(Boolean)
-    .map((tag) => tag.toLowerCase());
+const clockEl = document.getElementById('clock');
+const sessionStatusEl = document.getElementById('session-status');
+const clockInTimeEl = document.getElementById('clock-in-time');
+const elapsedTimeEl = document.getElementById('elapsed-time');
+const todayTotalEl = document.getElementById('today-total');
+const weekTotalEl = document.getElementById('week-total');
+const entryCountEl = document.getElementById('entry-count');
+const entriesEl = document.getElementById('entries');
+const formErrorEl = document.getElementById('form-error');
 
-  const seen = new Set();
-  const duplicates = [];
+const projectInput = document.getElementById('project');
+const notesInput = document.getElementById('notes');
+const clockInButton = document.getElementById('clock-in');
+const clockOutButton = document.getElementById('clock-out');
 
-  normalizedTags.forEach((tag) => {
-    if (seen.has(tag) && !duplicates.includes(tag)) {
-      duplicates.push(tag);
-    }
-    seen.add(tag);
-  });
+let entries = loadEntries();
+let activeSession = null;
 
-  return {
-    tags: normalizedTags,
-    duplicates,
-  };
+function now() {
+  return new Date();
 }
 
-form.addEventListener('submit', (event) => {
-  event.preventDefault();
-  errorField.textContent = '';
-  Object.values(fieldErrors).forEach((fieldError) => {
-    fieldError.textContent = '';
+function formatDateTime(date) {
+  return date.toLocaleString();
+}
+
+function formatDuration(ms) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return [hours, minutes, seconds].map((part) => String(part).padStart(2, '0')).join(':');
+}
+
+function formatHoursAndMinutes(ms) {
+  const totalMinutes = Math.floor(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}h ${minutes}m`;
+}
+
+function saveEntries() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+
+function loadEntries() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function calculateSummaries() {
+  const current = now();
+  const todayStart = new Date(current.getFullYear(), current.getMonth(), current.getDate());
+  const weekStart = new Date(todayStart);
+  const dayOfWeek = (todayStart.getDay() + 6) % 7;
+  weekStart.setDate(todayStart.getDate() - dayOfWeek);
+
+  let todayMs = 0;
+  let weekMs = 0;
+
+  entries.forEach((entry) => {
+    const start = new Date(entry.startAt);
+    const end = new Date(entry.endAt);
+    const duration = Math.max(0, end - start);
+
+    if (start >= todayStart) {
+      todayMs += duration;
+    }
+
+    if (start >= weekStart) {
+      weekMs += duration;
+    }
   });
-  [descriptionInput, tagsInput, scheduleAInput, scheduleBInput].forEach((input) => {
-    input.removeAttribute('aria-invalid');
+
+  todayTotalEl.textContent = formatHoursAndMinutes(todayMs);
+  weekTotalEl.textContent = formatHoursAndMinutes(weekMs);
+  entryCountEl.textContent = String(entries.length);
+}
+
+function renderEntries() {
+  entriesEl.innerHTML = '';
+
+  const sorted = [...entries].sort((a, b) => new Date(b.startAt) - new Date(a.startAt));
+
+  sorted.forEach((entry) => {
+    const li = document.createElement('li');
+    li.className = 'entry';
+
+    const title = document.createElement('strong');
+    title.textContent = entry.project;
+
+    const meta = document.createElement('p');
+    meta.className = 'meta';
+    meta.textContent = `${formatDateTime(new Date(entry.startAt))} → ${formatDateTime(new Date(entry.endAt))} (${formatDuration(
+      new Date(entry.endAt) - new Date(entry.startAt),
+    )})`;
+
+    li.append(title, meta);
+
+    if (entry.notes) {
+      const notes = document.createElement('p');
+      notes.textContent = entry.notes;
+      li.appendChild(notes);
+    }
+
+    entriesEl.appendChild(li);
   });
+}
 
-  const formData = new FormData(form);
-  const { tags, duplicates } = parseAndValidateTags(tagsInput.value);
-  const description = formData.get('description')?.toString().trim() || '';
-  const scheduleA = formData.get('scheduleA')?.toString().trim() || '';
-  const scheduleB = formData.get('scheduleB')?.toString().trim() || '';
-  const validationErrors = [];
-
-  if (description.length < 10) {
-    fieldErrors.description.textContent = 'Description must be at least 10 characters long.';
-    descriptionInput.setAttribute('aria-invalid', 'true');
-    validationErrors.push('Description must be at least 10 characters long.');
-  }
-
-  if (tags.length < 1) {
-    fieldErrors.tags.textContent = 'Add at least one tag.';
-    tagsInput.setAttribute('aria-invalid', 'true');
-    validationErrors.push('Add at least one tag.');
-  }
-
-  if (duplicates.length > 0) {
-    const duplicateMessage = `Duplicate tags are not allowed: ${duplicates.join(', ')}`;
-    fieldErrors.tags.textContent = duplicateMessage;
-    tagsInput.setAttribute('aria-invalid', 'true');
-    validationErrors.push(duplicateMessage);
-  }
-
-  if (!scheduleA) {
-    fieldErrors.scheduleA.textContent = 'Schedule A is required.';
-    scheduleAInput.setAttribute('aria-invalid', 'true');
-    validationErrors.push('Schedule A is required.');
-  }
-
-  if (!scheduleB) {
-    fieldErrors.scheduleB.textContent = 'Schedule B is required.';
-    scheduleBInput.setAttribute('aria-invalid', 'true');
-    validationErrors.push('Schedule B is required.');
-  }
-
-  if (validationErrors.length > 0) {
-    errorField.textContent = 'Please fix the highlighted errors and submit again.';
+function refreshSessionUi() {
+  if (!activeSession) {
+    sessionStatusEl.textContent = 'Not clocked in';
+    clockInTimeEl.textContent = '—';
+    elapsedTimeEl.textContent = '00:00:00';
+    clockInButton.disabled = false;
+    clockOutButton.disabled = true;
     return;
   }
 
-  const item = {
-    description,
-    tags,
-    scheduleA,
-    scheduleB,
+  sessionStatusEl.textContent = `Clocked in (${activeSession.project})`;
+  clockInTimeEl.textContent = formatDateTime(activeSession.startAt);
+  elapsedTimeEl.textContent = formatDuration(now() - activeSession.startAt);
+  clockInButton.disabled = true;
+  clockOutButton.disabled = false;
+}
+
+function tickClock() {
+  clockEl.textContent = now().toLocaleTimeString();
+  refreshSessionUi();
+}
+
+function clearError() {
+  formErrorEl.textContent = '';
+}
+
+function showError(message) {
+  formErrorEl.textContent = message;
+}
+
+clockInButton.addEventListener('click', () => {
+  clearError();
+
+  if (activeSession) {
+    showError('You are already clocked in.');
+    return;
+  }
+
+  const project = projectInput.value.trim();
+  const notes = notesInput.value.trim();
+
+  if (project.length < 2) {
+    showError('Project name must be at least 2 characters.');
+    return;
+  }
+
+  activeSession = {
+    project,
+    notes,
+    startAt: now(),
   };
 
-  const li = document.createElement('li');
-  li.textContent = `${item.description} | tags: ${item.tags.join(', ')} | schedule A: ${item.scheduleA} | schedule B: ${item.scheduleB}`;
-  itemsList.prepend(li);
-
-  form.reset();
+  refreshSessionUi();
 });
+
+clockOutButton.addEventListener('click', () => {
+  clearError();
+
+  if (!activeSession) {
+    showError('You must clock in before clocking out.');
+    return;
+  }
+
+  const endAt = now();
+  const entry = {
+    project: activeSession.project,
+    notes: activeSession.notes,
+    startAt: activeSession.startAt.toISOString(),
+    endAt: endAt.toISOString(),
+  };
+
+  entries.push(entry);
+  saveEntries();
+  renderEntries();
+  calculateSummaries();
+
+  activeSession = null;
+  projectInput.value = '';
+  notesInput.value = '';
+  refreshSessionUi();
+});
+
+setInterval(tickClock, 1000);
+tickClock();
+renderEntries();
+calculateSummaries();
+refreshSessionUi();
