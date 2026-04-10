@@ -3,49 +3,69 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ToDo List</title>
+    <title>Time Keeping Software</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="container">
-      <h1>Main Form</h1>
-      <form id="todo-form" novalidate>
-        <label>
-          Description
-          <input id="description" name="description" type="text" required />
-          <small id="description-error" class="field-error" role="alert" aria-live="polite"></small>
-        </label>
+    <main class="app">
+      <header>
+        <h1>Time Keeping Software</h1>
+        <p id="clock" aria-live="polite">--:--:--</p>
+      </header>
 
-        <label>
-          Tags (comma separated)
-          <input id="tags" name="tags" type="text" placeholder="work, urgent" required />
-          <small id="tags-error" class="field-error" role="alert" aria-live="polite"></small>
-        </label>
+      <section class="panel">
+        <h2>Current Session</h2>
+        <div class="session-grid">
+          <div>
+            <p class="label">Status</p>
+            <p id="session-status">Not clocked in</p>
+          </div>
+          <div>
+            <p class="label">Clock in time</p>
+            <p id="clock-in-time">—</p>
+          </div>
+          <div>
+            <p class="label">Elapsed</p>
+            <p id="elapsed-time">00:00:00</p>
+          </div>
+        </div>
 
-        <label>
-          Schedule A
-          <input
-            id="scheduleA"
-            name="scheduleA"
-            type="datetime-local"
-            required
-          />
-          <small id="scheduleA-error" class="field-error" role="alert" aria-live="polite"></small>
-        </label>
+        <form id="session-form" novalidate>
+          <label for="project">Project</label>
+          <input id="project" name="project" type="text" placeholder="Client website redesign" required />
 
-        <label>
-          Schedule B
-          <input id="scheduleB" name="scheduleB" type="datetime-local" required />
-          <small id="scheduleB-error" class="field-error" role="alert" aria-live="polite"></small>
-        </label>
+          <label for="notes">Notes</label>
+          <textarea id="notes" name="notes" rows="3" placeholder="What are you working on?"></textarea>
 
-        <p id="form-error" role="alert" aria-live="polite"></p>
-        <button type="submit">Save</button>
-      </form>
+          <p id="form-error" role="alert" aria-live="polite"></p>
+          <div class="actions">
+            <button type="button" id="clock-in">Clock In</button>
+            <button type="button" id="clock-out">Clock Out</button>
+          </div>
+        </form>
+      </section>
 
-      <section>
-        <h2>Submitted items</h2>
-        <ul id="items"></ul>
+      <section class="panel">
+        <h2>Summary</h2>
+        <div class="summary-grid">
+          <div>
+            <p class="label">Today</p>
+            <p id="today-total">0h 0m</p>
+          </div>
+          <div>
+            <p class="label">This week</p>
+            <p id="week-total">0h 0m</p>
+          </div>
+          <div>
+            <p class="label">Total entries</p>
+            <p id="entry-count">0</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Time Log</h2>
+        <ul id="entries" class="entries"></ul>
       </section>
     </main>
 
